@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
 export async function GET(request: NextRequest) {
+  console.log('[DEBUG CALLBACK] === AUTH CALLBACK START ===');
+  console.log('[DEBUG CALLBACK] Request URL:', request.url);
   
   const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
@@ -9,8 +11,15 @@ export async function GET(request: NextRequest) {
   const error = searchParams.get('error');
   const errorDescription = searchParams.get('error_description');
 
+  console.log('[DEBUG CALLBACK] Search params:');
+  console.log('[DEBUG CALLBACK] - code:', code ? `${code.substring(0, 10)}...` : 'null');
+  console.log('[DEBUG CALLBACK] - state:', state);
+  console.log('[DEBUG CALLBACK] - error:', error);
+  console.log('[DEBUG CALLBACK] - errorDescription:', errorDescription);
+
   // Handle OAuth errors
   if (error) {
+    console.error('[DEBUG CALLBACK] OAuth error detected:', error, errorDescription);
     return new Response(createErrorHTML(`Authentication failed: ${errorDescription || error}`), {
       headers: { 'Content-Type': 'text/html' },
     });
@@ -18,6 +27,7 @@ export async function GET(request: NextRequest) {
 
   // Check for authorization code
   if (!code || !state) {
+    console.error('[DEBUG CALLBACK] Missing code or state - code:', !!code, 'state:', !!state);
     return new Response(createErrorHTML('Missing authorization code or state'), {
       headers: { 'Content-Type': 'text/html' },
     });
@@ -28,14 +38,21 @@ export async function GET(request: NextRequest) {
     const stateMatch = state.match(/subdomain:([^:]+)/);
     const subdomain = stateMatch ? stateMatch[1] : null;
 
+    console.log('[DEBUG CALLBACK] State parsing:');
+    console.log('[DEBUG CALLBACK] - stateMatch:', stateMatch);
+    console.log('[DEBUG CALLBACK] - extracted subdomain:', subdomain);
+
     if (!subdomain) {
+      console.error('[DEBUG CALLBACK] Failed to extract subdomain from state:', state);
       return new Response(createErrorHTML('Invalid state parameter'), {
         headers: { 'Content-Type': 'text/html' },
       });
     }
 
-
     const backendUrl = process.env.LLMC_BACKEND_URL;
+    console.log('[DEBUG CALLBACK] Backend URL:', backendUrl);
+    console.log('[DEBUG CALLBACK] Making backend request with subdomain:', subdomain);
+    
     const backendResponse = await fetch(`${backendUrl}/api/v1/auth/subdomain/exchange`, {
       method: 'POST',
       headers: {
@@ -44,10 +61,15 @@ export async function GET(request: NextRequest) {
       body: JSON.stringify({ code, subdomain }),
     });
 
+    console.log('[DEBUG CALLBACK] Backend response status:', backendResponse.status);
+    console.log('[DEBUG CALLBACK] Backend response headers:', Object.fromEntries(backendResponse.headers.entries()));
 
     if (!backendResponse.ok) {
       const errorText = await backendResponse.text();
-      console.error('[testing] API Route: Backend error:', errorText);
+      console.error('[DEBUG CALLBACK] Backend error details:');
+      console.error('[DEBUG CALLBACK] - Status:', backendResponse.status);
+      console.error('[DEBUG CALLBACK] - Status text:', backendResponse.statusText);
+      console.error('[DEBUG CALLBACK] - Error text:', errorText);
       return new Response(createErrorHTML('Authentication failed on server'), {
         headers: { 'Content-Type': 'text/html' },
       });
@@ -55,18 +77,25 @@ export async function GET(request: NextRequest) {
 
     let sessionToken = '';
     const setCookieHeader = backendResponse.headers.get('set-cookie');
+    console.log('[DEBUG CALLBACK] Set-Cookie header:', setCookieHeader);
+    
     if (setCookieHeader) {
       const cookieMatch = setCookieHeader.match(/subdomain_session=([^;]+)/);
+      console.log('[DEBUG CALLBACK] Cookie match result:', cookieMatch);
       if (cookieMatch) {
         sessionToken = cookieMatch[1];
+        console.log('[DEBUG CALLBACK] Extracted session token length:', sessionToken.length);
       }
     }
 
+    console.log('[DEBUG CALLBACK] Returning success HTML for subdomain:', subdomain);
     return new Response(createSuccessHTML(subdomain, sessionToken), {
       headers: { 'Content-Type': 'text/html' },
     });
 
   } catch (error) {
+    console.error('[DEBUG CALLBACK] Unexpected error in callback:', error);
+    console.error('[DEBUG CALLBACK] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     return new Response(createErrorHTML('An unexpected error occurred'), {
       headers: { 'Content-Type': 'text/html' },
     });
@@ -95,9 +124,12 @@ function createSuccessHTML(subdomain: string, sessionToken: string): string {
         <p>Closing popup...</p>
       </div>
       <script>
-        console.log('[testing] Success HTML: Notifying parent and closing popup');
-        console.log('[testing] Success HTML: Session token length:', '${sessionToken}'.length);
-        console.log('[testing] Success HTML: Window opener exists:', !!window.opener);
+        console.log('[DEBUG SUCCESS] === SUCCESS HTML SCRIPT START ===');
+        console.log('[DEBUG SUCCESS] Subdomain:', '${subdomain}');
+        console.log('[DEBUG SUCCESS] Session token length:', '${sessionToken}'.length);
+        console.log('[DEBUG SUCCESS] Session token preview:', '${sessionToken}'.substring(0, 10) + '...');
+        console.log('[DEBUG SUCCESS] Window opener exists:', !!window.opener);
+        console.log('[DEBUG SUCCESS] Current URL:', window.location.href);
         
         // Check if this is popup mode or direct redirect
         if (window.opener) {

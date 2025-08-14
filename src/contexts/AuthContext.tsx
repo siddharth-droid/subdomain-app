@@ -93,10 +93,18 @@ export class AuthAPI {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
     const oauthBaseUrl = process.env.NEXT_PUBLIC_GOOGLE_OAUTH_URL;
     
-    const redirectUri = `${baseUrl}/auth/callback`;
+    // Use explicit OAuth redirect URI if provided, otherwise fall back to current domain
+    const redirectUri = process.env.NEXT_PUBLIC_OAUTH_REDIRECT_URI || `${baseUrl}/auth/callback`;
     
     if (typeof window !== 'undefined') {
       console.log('[DEBUG] Using fixed redirect URI instead of current origin for OAuth compliance');
+      console.log('[DEBUG AUTH] Environment variables:');
+      console.log('[DEBUG AUTH] - NEXT_PUBLIC_BASE_URL:', baseUrl);
+      console.log('[DEBUG AUTH] - NEXT_PUBLIC_OAUTH_REDIRECT_URI:', process.env.NEXT_PUBLIC_OAUTH_REDIRECT_URI);
+      console.log('[DEBUG AUTH] - NEXT_PUBLIC_GOOGLE_CLIENT_ID:', clientId);
+      console.log('[DEBUG AUTH] - NEXT_PUBLIC_GOOGLE_OAUTH_URL:', oauthBaseUrl);
+      console.log('[DEBUG AUTH] - Generated redirect URI:', redirectUri);
+      console.log('[DEBUG AUTH] - Subdomain:', subdomain);
     }
     
     const scope = 'openid email profile';
@@ -111,6 +119,9 @@ export class AuthAPI {
       `access_type=offline&` +
       `prompt=consent`;
     
+    if (typeof window !== 'undefined') {
+      console.log('[DEBUG AUTH] - Generated OAuth URL:', oauthUrl);
+    }
     
     // Additional validation
     if (!clientId) {
