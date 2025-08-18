@@ -237,7 +237,19 @@ export class OAuthPopupHandler {
       };
       window.addEventListener('message', messageListener);
 
+      // Poll for popup closure
+      const pollForClosure = setInterval(() => {
+        if (this.popup?.closed) {
+          console.log('[testing] OAuthPopup: Popup window closed detected');
+          clearInterval(pollForClosure);
+          this.cleanup();
+          window.removeEventListener('message', messageListener);
+          resolve(false);
+        }
+      }, 1000);
+
       setTimeout(() => {
+        clearInterval(pollForClosure);
         this.cleanup();
         window.removeEventListener('message', messageListener);
         reject(new Error('Authentication timeout'));
