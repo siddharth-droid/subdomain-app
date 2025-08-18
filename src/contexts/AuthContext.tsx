@@ -90,20 +90,17 @@ class AuthStorage {
 export class AuthAPI {
   static generateOAuthUrl(subdomain: string): string {
     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
     const oauthBaseUrl = process.env.NEXT_PUBLIC_GOOGLE_OAUTH_URL;
     
-    // Use explicit OAuth redirect URI if provided, otherwise fall back to current domain
-    const redirectUri = process.env.NEXT_PUBLIC_OAUTH_REDIRECT_URI || `${baseUrl}/auth/callback`;
+    // Always use centralized auth - no need for dynamic base URL
+    const redirectUri = process.env.NEXT_PUBLIC_OAUTH_REDIRECT_URI || "https://dev-beta.llmcontrols.ai/auth/callback";
     
     if (typeof window !== 'undefined') {
-      console.log('[DEBUG] Using fixed redirect URI instead of current origin for OAuth compliance');
-      console.log('[DEBUG AUTH] Environment variables:');
-      console.log('[DEBUG AUTH] - NEXT_PUBLIC_BASE_URL:', baseUrl);
+      console.log('[DEBUG AUTH] Centralized OAuth Configuration:');
       console.log('[DEBUG AUTH] - NEXT_PUBLIC_OAUTH_REDIRECT_URI:', process.env.NEXT_PUBLIC_OAUTH_REDIRECT_URI);
       console.log('[DEBUG AUTH] - NEXT_PUBLIC_GOOGLE_CLIENT_ID:', clientId);
       console.log('[DEBUG AUTH] - NEXT_PUBLIC_GOOGLE_OAUTH_URL:', oauthBaseUrl);
-      console.log('[DEBUG AUTH] - Generated redirect URI:', redirectUri);
+      console.log('[DEBUG AUTH] - Using redirect URI:', redirectUri);
       console.log('[DEBUG AUTH] - Subdomain:', subdomain);
     }
     
@@ -126,9 +123,6 @@ export class AuthAPI {
     // Additional validation
     if (!clientId) {
       console.error('[ERROR] NEXT_PUBLIC_GOOGLE_CLIENT_ID is not set!');
-    }
-    if (!baseUrl) {
-      console.error('[ERROR] NEXT_PUBLIC_BASE_URL is not set!');
     }
     if (!oauthBaseUrl) {
       console.error('[ERROR] NEXT_PUBLIC_GOOGLE_OAUTH_URL is not set!');
@@ -416,9 +410,13 @@ export function useSubdomain(): string {
     const prodDomain = process.env.NEXT_PUBLIC_PROD_DOMAIN;
     
     if (devDomain && hostname.includes(devDomain)) {
-      extractedSubdomain = hostname.split(devDomain)[0];
+      // Remove the domain suffix and extract the first part (subdomain)
+      const prefix = hostname.replace(devDomain, '');
+      extractedSubdomain = prefix.split('.')[0];
     } else if (prodDomain && hostname.includes(prodDomain)) {
-      extractedSubdomain = hostname.split(prodDomain)[0];
+      // Remove the domain suffix and extract the first part (subdomain)
+      const prefix = hostname.replace(prodDomain, '');
+      extractedSubdomain = prefix.split('.')[0];
     } else {
       console.log('[testing] useSubdomain: No valid subdomain pattern found');
     }

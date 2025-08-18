@@ -15,7 +15,24 @@ export async function GET(
     }
 
     const host = request.headers.get('host');
-    const subdomain = host?.split('.')[0];
+    
+    // Extract subdomain accounting for new domain structure
+    let subdomain = '';
+    if (host) {
+      const devDomain = process.env.NEXT_PUBLIC_DEV_DOMAIN;
+      const prodDomain = process.env.NEXT_PUBLIC_PROD_DOMAIN;
+      
+      if (devDomain && host.includes(devDomain)) {
+        const prefix = host.replace(devDomain, '');
+        subdomain = prefix.split('.')[0];
+      } else if (prodDomain && host.includes(prodDomain)) {
+        const prefix = host.replace(prodDomain, '');
+        subdomain = prefix.split('.')[0];
+      } else {
+        // Fallback to old logic for backward compatibility
+        subdomain = host.split('.')[0];
+      }
+    }
     
     if (!subdomain) {
       console.error('[subdomain-api] No subdomain found in host:', host);

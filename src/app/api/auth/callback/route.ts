@@ -162,17 +162,14 @@ function createSuccessHTML(subdomain: string, sessionToken: string): string {
             if (response.ok) {
               console.log('[testing] Success HTML: Cookie set successfully, redirecting to subdomain dashboard');
               // Redirect to the original subdomain where user started OAuth flow
-              const baseUrl = '${process.env.NEXT_PUBLIC_BASE_URL}' || 'http://localhost:3000';
-              const devDomain = '${process.env.NEXT_PUBLIC_DEV_DOMAIN}' || '.localhost';
+              const devDomain = '${process.env.NEXT_PUBLIC_DEV_DOMAIN}' || '.dev-beta.llmcontrols.ai';
               const prodDomain = '${process.env.NEXT_PUBLIC_PROD_DOMAIN}' || '.llmcontrols.ai';
               
-              // Determine which domain to use based on current environment
-              const isLocalhost = baseUrl.includes('localhost');
-              const domain = isLocalhost ? devDomain.substring(1) : prodDomain.substring(1); // Remove leading dot
-              const protocol = baseUrl.startsWith('https') ? 'https' : 'http';
-              const port = isLocalhost ? ':3000' : '';
+              // Use dev domain for dev-beta environment, prod domain for production
+              const domain = devDomain.substring(1); // Remove leading dot -> "dev-beta.llmcontrols.ai"
+              const protocol = 'https'; // Always use https for llmcontrols.ai domains
               
-              const subdomainUrl = \`\${protocol}://\${subdomain}.\${domain}\${port}/\`;
+              const subdomainUrl = \`\${protocol}://\${subdomain}.\${domain}/\`;
               console.log('[testing] Success HTML: Redirecting to:', subdomainUrl);
               window.location.href = subdomainUrl;
             } else {

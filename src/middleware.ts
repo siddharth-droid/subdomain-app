@@ -11,9 +11,13 @@ export function middleware(request: NextRequest) {
   const prodDomain = process.env.NEXT_PUBLIC_PROD_DOMAIN;
   
   if (devDomain && hostname.includes(devDomain)) {
-    subdomain = hostname.split(devDomain)[0];
+    // Remove the domain suffix and extract the first part (subdomain)
+    const prefix = hostname.replace(devDomain, '');
+    subdomain = prefix.split('.')[0];
   } else if (prodDomain && hostname.includes(prodDomain)) {
-    subdomain = hostname.split(prodDomain)[0];
+    // Remove the domain suffix and extract the first part (subdomain)
+    const prefix = hostname.replace(prodDomain, '');
+    subdomain = prefix.split('.')[0];
   }
 
   if (subdomain && subdomain !== 'www' && subdomain !== 'app') {
