@@ -89,7 +89,20 @@ export async function GET(request: NextRequest) {
     }
 
     console.log('[DEBUG CALLBACK] Returning success HTML for subdomain:', subdomain);
-    return new Response(createSuccessHTML(subdomain, sessionToken), {
+    
+    // Build the redirect URL on server side where env vars are available
+    const devDomain = process.env.NEXT_PUBLIC_DEV_DOMAIN || '.dev-beta.llmcontrols.ai';
+    const domain = devDomain.substring(1); // Remove leading dot
+    const protocol = 'https';
+    const redirectUrl = `${protocol}://${subdomain}.${domain}/`;
+    
+    console.log('[DEBUG CALLBACK] Redirect URL construction:');
+    console.log('[DEBUG CALLBACK] - devDomain:', devDomain);
+    console.log('[DEBUG CALLBACK] - domain:', domain);
+    console.log('[DEBUG CALLBACK] - subdomain:', subdomain);
+    console.log('[DEBUG CALLBACK] - final redirectUrl:', redirectUrl);
+    
+    return new Response(createSuccessHTML(subdomain, sessionToken, redirectUrl), {
       headers: { 'Content-Type': 'text/html' },
     });
 
@@ -102,7 +115,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-function createSuccessHTML(subdomain: string, sessionToken: string): string {
+function createSuccessHTML(subdomain: string, sessionToken: string, redirectUrl: string): string {
   return `
     <!DOCTYPE html>
     <html>
@@ -161,17 +174,8 @@ function createSuccessHTML(subdomain: string, sessionToken: string): string {
             console.log('[testing] Success HTML: Cookie set response:', response.status);
             if (response.ok) {
               console.log('[testing] Success HTML: Cookie set successfully, redirecting to subdomain dashboard');
-              // Redirect to the original subdomain where user started OAuth flow
-              const devDomain = '${process.env.NEXT_PUBLIC_DEV_DOMAIN}' || '.dev-beta.llmcontrols.ai';
-              const prodDomain = '${process.env.NEXT_PUBLIC_PROD_DOMAIN}' || '.llmcontrols.ai';
-              
-              // Use dev domain for dev-beta environment, prod domain for production
-              const domain = devDomain.substring(1); // Remove leading dot -> "dev-beta.llmcontrols.ai"
-              const protocol = 'https'; // Always use https for llmcontrols.ai domains
-              
-              const subdomainUrl = \`\${protocol}://\${subdomain}.\${domain}/\`;
-              console.log('[testing] Success HTML: Redirecting to:', subdomainUrl);
-              window.location.href = subdomainUrl;
+              console.log('[testing] Success HTML: Redirecting to:', '${redirectUrl}');
+              window.location.href = '${redirectUrl}';
             } else {
               console.error('[testing] Success HTML: Failed to set cookie');
               alert('Authentication completed but failed to set session. Please try again.');
