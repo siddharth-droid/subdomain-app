@@ -49,8 +49,9 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const backendUrl = process.env.LLMC_BACKEND_URL;
-    console.log('[DEBUG CALLBACK] Backend URL:', backendUrl);
+    // HARDCODED FOR TESTING - Backend URL
+    const backendUrl = 'https://dev-beta-api.llmcontrols.ai';
+    console.log('[DEBUG CALLBACK] HARDCODED Backend URL:', backendUrl);
     console.log('[DEBUG CALLBACK] Making backend request with subdomain:', subdomain);
     
     const backendResponse = await fetch(`${backendUrl}/api/v1/auth/subdomain/exchange`, {
@@ -90,17 +91,12 @@ export async function GET(request: NextRequest) {
 
     console.log('[DEBUG CALLBACK] Returning success HTML for subdomain:', subdomain);
     
-    // Build the redirect URL on server side where env vars are available
-    const devDomain = process.env.NEXT_PUBLIC_DEV_DOMAIN || '.dev-beta.llmcontrols.ai';
-    const domain = devDomain.substring(1); // Remove leading dot
-    const protocol = 'https';
-    const redirectUrl = `${protocol}://${subdomain}.${domain}/`;
+    // HARDCODED FOR TESTING - Build the redirect URL 
+    const redirectUrl = `https://${subdomain}.dev-beta.llmcontrols.ai/`;
     
-    console.log('[DEBUG CALLBACK] Redirect URL construction:');
-    console.log('[DEBUG CALLBACK] - devDomain:', devDomain);
-    console.log('[DEBUG CALLBACK] - domain:', domain);
+    console.log('[DEBUG CALLBACK] HARDCODED Redirect URL construction:');
     console.log('[DEBUG CALLBACK] - subdomain:', subdomain);
-    console.log('[DEBUG CALLBACK] - final redirectUrl:', redirectUrl);
+    console.log('[DEBUG CALLBACK] - HARDCODED final redirectUrl:', redirectUrl);
     
     return new Response(createSuccessHTML(subdomain, sessionToken, redirectUrl), {
       headers: { 'Content-Type': 'text/html' },
@@ -174,7 +170,7 @@ function createSuccessHTML(subdomain: string, sessionToken: string, redirectUrl:
             console.log('[testing] Success HTML: Cookie set response:', response.status);
             if (response.ok) {
               console.log('[testing] Success HTML: Cookie set successfully, redirecting to subdomain dashboard');
-              console.log('[testing] Success HTML: Redirecting to:', '${redirectUrl}');
+              console.log('[testing] Success HTML: HARDCODED Redirecting to:', '${redirectUrl}');
               window.location.href = '${redirectUrl}';
             } else {
               console.error('[testing] Success HTML: Failed to set cookie');
